@@ -1,0 +1,6 @@
+[my_hosts]
+ansibleclient1
+ansibleclient2
+ansibleclient3
+[test_hosts]
+ansibletest1
