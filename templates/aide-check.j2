@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "executing $0 ......"
+
+/bin/nice -n 19 /sbin/aide --update
+
+/bin/rm -f /var/lib/aide/aide.db.gz
+/bin/mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+
+logger -s 'AIDE DAILY FILE CHANGE AND INTRUSION DETECTION CHECK HAS EXECUTED
