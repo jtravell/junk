@@ -1,0 +1,14 @@
+# addUsers.yml
+# Users to add
+user1:
+  login: 'oracleuser1'
+  gecos: 'Oracle User One Account'
+  shell: '/bin/bash'
+  supplementalGroups: 'database'
+  password: '<REDACTED>'
+user2:
+  login: 'oracleuser2'
+  gecos: 'Oracle User Two Account'
+  shell: '/bin/bash'
+  supplementalGroups: 'database'
+  password: '<REDACTED>'

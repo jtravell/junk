@@ -1,0 +1,59 @@
+---
+# configAIDE.yml
+# Install and configure file based intrusion
+# detection system. execute external script
+# for configuring AIDE
+# use the power of Ansible to create
+# exernal scripts from template and then 
+# create a symbolic link.
+
+- name: AIDE file based intrusion detection 
+  hosts: my_hosts
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+ 
+  tasks:
+        - name:  install aide
+          yum:
+            name: aide
+            state: present
+
+        # setup idempotent result based on aide file
+        - name: Check if /var/lib/aide/aide.db.gz exists
+          stat:
+            path: /var/lib/aide/aide.db.gz
+          register: stat_result
+  
+        # execute exernal script to configure aide
+        - name: configure aide
+          block:
+            - copy:
+               src: /home/lnxcfg/scripts/configAIDE      
+               dest: /tmp/configAIDE
+               owner: root
+               group: root
+               mode: 0755
+            - command : '/tmp/configAIDE'
+            - file:
+               state: absent
+               path: '/tmp/configAIDE'
+          when: stat_result.stat.exists == False
+
+        - name: create daily script to execute AIDE  
+          template:
+            src:  /home/lnxcfg/templates/aide-check.j2
+            dest: /usr/local/bin/aide-check
+            owner: root
+            group: root
+            mode: 0755
+        
+        - name: create symbolic link to /etc/cron.daily
+          file:
+            src: /usr/local/bin/aide-check
+            dest: /etc/cron.daily/aide-check 
+            owner: root
+            group: root
+            state: link
+            force: yes

@@ -1,0 +1,17 @@
+---
+# configNSSwitch.yml
+# use replace to modify text in a file
+- name: configure nsswitch.conf
+  hosts: my_hosts
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+
+tasks:
+        - name:  change sss file 
+          replace:
+            path: /etc/nsswitch.conf
+            regexp: '\s files sss' 
+            replace: 'sss files'
+            backup: yes
