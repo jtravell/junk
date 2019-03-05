@@ -31,10 +31,14 @@
        
      - name: Add user to docker group
        command: usermod -a -G docker lnxcfg
-
+      
+     # Disable SELinux
      - name: Disable SELinux
-       command: setenforce 0
-
+       selinux:
+         state: disabled
+       become: yes
+       become_user: root
+       
      - name: Define k8s repo with serious security hole to be removed later
        shell:
          cmd: |
