@@ -1,0 +1,11 @@
+---
+- name: Transfer and execute k8s install script.
+  hosts: k8s-master
+  remote_user: lnxcfg
+  sudo: yes
+  tasks:
+     - name: Transfer the script
+       copy: src=scripts/InstallDockerAndKubernetesGeneric.sh dest=/home/lnxcfg mode=0777
+
+     - name: Execute the script
+       command: sh /home/lnxcfg/InstallDockerAndKubernetesGeneric.sh
