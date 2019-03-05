@@ -1,13 +1,22 @@
 ---
-- name: Transfer and execute k8s install script.
-  hosts: k8s-master
+# Kubernetes installation steps that apply to all types of nodes.  Will be followed by specific additional steps for each type of node.  
+- name: Install k8s generic all types of nodes.
+  hosts: k8s-master, k8s-worker
   remote_user: lnxcfg
   become: true
   become_method: sudo
   become_user: root
 
   tasks:  
-       
+
+     - name: Perform yum update of all packages
+       yum:
+         name: '*'
+         state: latest
+
+     - name: Reboot machine
+       reboot:
+          
      - name: Execute the script
        command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
        
@@ -22,3 +31,40 @@
        
      - name: Add user to docker group
        command: usermod -a -G docker lnxcfg
+
+     - name: Define k8s repo with serious security hole to be removed later.
+       shell:
+         cmd: |
+           cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+           [kubernetes]
+           name=Kubernetes
+           baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+           enabled=1
+           gpgcheck=0
+           repo_gpgcheck=0
+           gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+           EOF
+       become: yes
+       become_user: root
+
+     - name: Disable SELinux
+       command: setenforce 0
+       become: yes
+       become_user: lnxcfg
+
+     - name: Install common software requirements
+       become: true
+       become_method: sudo
+       become_user: root
+       state: latest 
+       yum:
+         - kubelet
+         - kubeadm
+         - kubectl
+
+     - name: Enable kubelet.  This is necessary before kubeadm.  
+       command: systemctl enable kubelet
+       become: true
+       become_method: sudo
+       become_user: root
+       
