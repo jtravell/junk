@@ -3,9 +3,6 @@
   hosts: k8s-master
   remote_user: lnxcfg
   sudo: yes
-  become: true
-  become_user: root 
-  shell: "/bin/bash"
 
   tasks:
      - name: Transfer the script
