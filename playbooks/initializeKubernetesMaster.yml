@@ -14,12 +14,16 @@
          url: https://tinyurl.com/yb4xturm -O rbac-kdd.yaml
          dest: /home/lnxcfg
          mode: 0755
+       become: yes
+       become_user: root
 
      - name: Download the Calico config file 
        get_url:
          url: https://tinyurl.com/y8lvqc9g -O calico.yaml
          dest: /home/lnxcfg
          mode: 0755
+       become: yes
+       become_user: root
   
      - name: Put cidr for overlay network into environment variable
        command: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
