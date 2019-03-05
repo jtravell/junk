@@ -20,7 +20,7 @@
      - name: Remove any previous versions of docker
        command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
 
-     - name: Remove any previous versions of docker
+     - name: Install package that will be needed later to disable SELinux
        command: yum -y install libselinux-python
        
      - name: Install docker 
@@ -57,7 +57,7 @@
        become: yes
        become_user: root
 
-     - name: Remove any previous versions of docker
+     - name: Install kubelet kubeadm and kubectl
        command: yum -y install kubelet kubeadm kubectl
 
      - name: Enable kubelet before kubeadm  
