@@ -12,7 +12,7 @@
      - name: Download the RBAC config file 
        get_url:
          url: https://tinyurl.com/yb4xturm -O rbac-kdd.yaml
-         dest: /home/lnxcfg
+         dest: /home/lnxcfg/rbac-kdd.yaml
          mode: 0755
        become: yes
        become_user: root
@@ -20,7 +20,7 @@
      - name: Download the Calico config file 
        get_url:
          url: https://tinyurl.com/y8lvqc9g -O calico.yaml
-         dest: /home/lnxcfg
+         dest: /home/lnxcfg/calico.yaml
          mode: 0755
        become: yes
        become_user: root
