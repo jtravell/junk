@@ -19,6 +19,9 @@
           
      - name: Remove any previous versions of docker
        command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+
+     - name: Remove any previous versions of docker
+       command: yum -y install libselinux-python
        
      - name: Install docker 
        command: amazon-linux-extras install -y docker
