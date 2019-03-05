@@ -17,7 +17,7 @@
      - name: Reboot machine
        reboot:
           
-     - name: Execute the script
+     - name: Remove any previous versions of docker
        command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
        
      - name: Install docker 
@@ -32,7 +32,10 @@
      - name: Add user to docker group
        command: usermod -a -G docker lnxcfg
 
-     - name: Define k8s repo with serious security hole to be removed later.
+     - name: Disable SELinux
+       command: setenforce 0
+
+     - name: Define k8s repo with serious security hole to be removed later
        shell:
          cmd: |
            cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -47,24 +50,12 @@
        become: yes
        become_user: root
 
-     - name: Disable SELinux
-       command: setenforce 0
-       become: yes
-       become_user: lnxcfg
+     - name: Remove any previous versions of docker
+       command: yum -y install kubelet kubeadm kubectl
 
-     - name: Install common software requirements
-       become: true
-       become_method: sudo
-       become_user: root
-       state: latest 
-       yum:
-         - kubelet
-         - kubeadm
-         - kubectl
-
-     - name: Enable kubelet.  This is necessary before kubeadm.  
+     - name: Enable kubelet before kubeadm  
        command: systemctl enable kubelet
-       become: true
+       become: yes 
        become_method: sudo
        become_user: root
        
