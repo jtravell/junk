@@ -1,0 +1,56 @@
+---
+# Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
+- name: Initialize Kubernetes on a Master node 
+  hosts: k8s-master
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+
+  tasks:  
+
+     - name: Download the RBAC config file 
+       command: wget https://tinyurl.com/yb4xturm -O rbac-kdd.yaml
+
+     - name: Download the Calico config file 
+       command: wget https://tinyurl.com/y8lvqc9g -O calico.yaml
+
+     - name: Put cidr for overlay network into environment variable
+       command: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
+       become: yes
+       become_user: root
+
+     - name: Run kubeadm init 
+       command: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr $MY_CALICO_CIDR | tee kubeadm-init.out
+       become: yes
+       become_user: root
+
+     - name: Apply the RBAC config file to the cluster
+       command: kubectl apply -f rbac-kdd.yaml
+       become: yes
+       become_user: root
+
+     # Do we really need to reboot before doing the remaining steps below 
+     - name: Reboot machine
+       reboot:  
+
+     - name: Create kube directory 
+       command: mkdir -p $HOME/.kube
+       sudo: true
+       sudo_user: lnxcfg
+
+     - name: copy admin_conf file into kube_config directory 
+       command: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
+       sudo: true
+       sudo_user: lnxcfg
+
+     - name: Change ownership of kube_config directory 
+       command: chown $(id -u):$(id -g) $HOME/.kube/config 
+       sudo: true
+       sudo_user: lnxcfg
+
+     # Then deploy a pod network to the cluster 
+     - name: Deploy a pod network to the cluster 
+       command: kubectl apply -f calico.yaml
+       sudo: true
+       sudo_user: lnxcfg
