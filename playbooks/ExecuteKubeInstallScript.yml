@@ -2,11 +2,23 @@
 - name: Transfer and execute k8s install script.
   hosts: k8s-master
   remote_user: lnxcfg
-  sudo: yes
+  become: true
+  become_method: sudo
+  become_user: root
 
-  tasks:
-     - name: Transfer the script
-       copy: src=scripts/InstallDockerAndKubernetesGeneric.sh dest=/home/lnxcfg mode=0777
-
+  tasks:  
+       
      - name: Execute the script
-       command: sh /home/lnxcfg/InstallDockerAndKubernetesGeneric.sh
+       command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+       
+     - name: Install docker 
+       command: amazon-linux-extras install -y docker
+       
+     - name: Start docker
+       command: systemctl start docker.service
+       
+     - name: Enable docker 
+       command: systemctl enable docker.service
+       
+     - name: Add user to docker group
+       command: usermod -a -G docker lnxcfg
