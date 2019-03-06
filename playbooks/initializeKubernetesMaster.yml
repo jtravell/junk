@@ -26,23 +26,26 @@
        become_user: root
   
      - name: Put cidr for overlay network into environment variable
-       command: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
+       shell: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
        become: yes
        become_user: root
 
-     - name: Run kubeadm init 
-       command: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr $MY_CALICO_CIDR | tee kubeadm-init.out
+     #Start test of async task 
+     - name: 'Run kubeadm init - async task'
+       shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr $MY_CALICO_CIDR | tee kubeadm-init.out
        become: yes
-       become_user: root
+       become_user: root  
+       async: 1000
+       poll: 0
+       register: kubeadm-init_sleeper
 
-     - name: Apply the RBAC config file to the cluster
-       command: kubectl apply -f rbac-kdd.yaml
-       become: yes
-       become_user: root
-
-     # Do we really need to reboot before doing the remaining steps below 
-     - name: Reboot machine
-       reboot:  
+     - name: 'Run kubeadm init - check on async task'
+       async_status:
+         jid: "{{ kubeadm-init_sleeper.ansible_job_id }}"
+       register: job_result
+       until: job_result.finished
+       retries: 30
+     #End test of async task 
 
      - name: Create kube directory 
        command: mkdir -p $HOME/.kube
@@ -57,7 +60,16 @@
      - name: Change ownership of kube_config directory 
        command: chown $(id -u):$(id -g) $HOME/.kube/config 
        sudo: true
-       sudo_user: lnxcfg
+       sudo_user: lnxcfg       
+       
+     # Do we really need to reboot before doing the remaining steps below 
+     #- name: Reboot machine
+     #  reboot:  
+       
+     - name: Apply the RBAC config file to the cluster
+       shell: kubectl apply -f /home/lnxcfg/rbac-kdd.yaml
+       become: yes
+       become_user: root
 
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
