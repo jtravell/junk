@@ -34,20 +34,22 @@
      - name: Define cidr for calico as a variable in the task
        shell: echo $( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
        register: my_calico_cidr
+       become: yes
+       become_user: root
 
-     - name: Run kubeadm init using the calico variable just created
+     - name: Run kubeadm init using the calico variable just created {{ item }}
        shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr {{ item }} | tee kubeadm-init.out
        with_items: my_calico_cidr.stdout
        become: yes
        become_user: root  
      #End test of new variable approach
        
-     #- name: Run kubeadm init
-     #  shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr $MY_CALICO_CIDR | tee kubeadm-init.out
-     #  become: yes
+     #- name: Run kubeadm init  
+     #  shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr $MY_CALICO_CIDR | tee kubeadm-init.out  
+     #  become: yes  
      #  become_user: root  
 
-     - name: Wait until the file /tmp/foo is present before continuing
+     - name: Wait until the file /etc/kubernetes/admin.conf is present before continuing
        wait_for:
          path: /etc/kubernetes/admin.conf
        sudo: true
