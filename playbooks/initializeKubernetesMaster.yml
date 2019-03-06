@@ -30,22 +30,16 @@
        become: yes
        become_user: root
 
-     #Start test of async task 
      - name: 'Run kubeadm init - async task'
        shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr $MY_CALICO_CIDR | tee kubeadm-init.out
        become: yes
        become_user: root  
-       async: 1000
-       poll: 0
-       register: kubeadminit_sleeper
 
-     - name: 'Run kubeadm init - check on async task'
-       async_status:
-         jid: "{{ kubeadminit_sleeper.ansible_job_id }}"
-       register: job_result
-       until: job_result.finished
-       retries: 30
-     #End test of async task 
+     - name: Wait until the file /tmp/foo is present before continuing
+       wait_for:
+         path: /etc/kubernetes/admin.conf
+       sudo: true
+       sudo_user: lnxcfg
 
      - name: Create kube directory 
        command: mkdir -p $HOME/.kube
