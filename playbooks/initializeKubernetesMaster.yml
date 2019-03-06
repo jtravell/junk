@@ -12,7 +12,7 @@
      - name: Download the RBAC config file 
        get_url:
          url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-         dest: /home/lnxcfg/
+         dest: /home/lnxcfg/rbac-kdd.yaml
          mode: 0440
        #become: yes
        #become_user: root
@@ -20,7 +20,7 @@
      - name: Download the Calico config file 
        get_url:
          url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-         dest: /home/lnxcfg/
+         dest: /home/lnxcfg/calico.yaml
          mode: 0440
        #become: yes
        #become_user: root
