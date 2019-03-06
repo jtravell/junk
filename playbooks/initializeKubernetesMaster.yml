@@ -37,11 +37,11 @@
        become_user: root  
        async: 1000
        poll: 0
-       register: kubeadm-init_sleeper
+       register: kubeadminit_sleeper
 
      - name: 'Run kubeadm init - check on async task'
        async_status:
-         jid: "{{ kubeadm-init_sleeper.ansible_job_id }}"
+         jid: "{{ kubeadminit_sleeper.ansible_job_id }}"
        register: job_result
        until: job_result.finished
        retries: 30
