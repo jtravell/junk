@@ -9,13 +9,13 @@
 
   tasks:  
 
-     - name: Download the RBAC config file 
-       get_url:
-         url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-         dest: /home/lnxcfg/rbac-kdd.yaml
-         mode: 0440
-       become: yes
-       become_user: root
+#     - name: Download the RBAC config file 
+#       get_url:
+#         url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+#         dest: /home/lnxcfg/rbac-kdd.yaml
+#         mode: 0440
+#       become: yes
+#       become_user: root
 
      - name: Download the Calico config file 
        get_url:
@@ -25,10 +25,10 @@
        become: yes
        become_user: root
   
-     - name: Put cidr for overlay network into environment variable
-       shell: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
-       become: yes
-       become_user: root
+#     - name: Put cidr for overlay network into environment variable
+#       shell: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
+#       become: yes
+#       become_user: root
 
      #Start test of new variable approach
      - name: Define cidr for calico as a variable in the task
@@ -45,6 +45,7 @@
        become_user: root  
      #End test of new variable approach
 
+     #Confirm that kubeadm init has created the admin.conf file  
      - name: Wait until the file /etc/kubernetes/admin.conf is present before continuing
        wait_for:
          path: /etc/kubernetes/admin.conf
@@ -60,38 +61,31 @@
        shell: chown -R lnxcfg:lnxcfg /etc/kubernetes
        become: yes
        become_user: root
-
-     - name: Create the .kube/config directory
-       shell: mkdir $HOME/.kube/config
-       sudo: true
-       sudo_user: lnxcfg
        
      - name: copy admin_conf file into kube_config directory 
        shell: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
        sudo: true
        sudo_user: lnxcfg
 
-     - name: Change ownership of kube_config directory 
+     - name: Change ownership of kube_config file 
        shell: chown $(id -u):$(id -g) $HOME/.kube/config 
        sudo: true
        sudo_user: lnxcfg       
        
-     # Do we really need to reboot before doing the remaining steps below 
-     #- name: Reboot machine
-     #  reboot:  
-####################################
-#sudo kubeadm init --pod-network-cidr=192.168.0.0/16
-#mkdir -p $HOME/.kube
-#sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-#sudo chown $(id -u):$(id -g) $HOME/.kube/config
-####################################
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
-       shell: kubectl apply -f calico.yaml
-       sudo: true
-       sudo_user: lnxcfg
-     
-     - name: Apply the RBAC config file to the cluster
-       shell: kubectl apply -f rbac-kdd.yaml
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
        sudo: true
        sudo_user: lnxcfg       
+
+     - name: Apply the RBAC config file to the cluster
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+       sudo: true
+       sudo_user: lnxcfg       
+
+     # Enable bash autocompletion
+     - name: Deploy a pod network to the cluster 
+       shell: source <(kubectl completion bash)
+
+     - name: Deploy a pod network to the cluster 
+       shell: echo "source <(kubectl completion bash)" >>~/.bashrc
