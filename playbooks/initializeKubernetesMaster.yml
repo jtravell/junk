@@ -79,14 +79,19 @@
      # Do we really need to reboot before doing the remaining steps below 
      #- name: Reboot machine
      #  reboot:  
-       
-     - name: Apply the RBAC config file to the cluster
-       shell: kubectl apply -f /home/lnxcfg/rbac-kdd.yaml
-       become: yes
-       become_user: root
-
+####################################
+#sudo kubeadm init --pod-network-cidr=192.168.0.0/16
+#mkdir -p $HOME/.kube
+#sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+#sudo chown $(id -u):$(id -g) $HOME/.kube/config
+####################################
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
        shell: kubectl apply -f calico.yaml
        sudo: true
        sudo_user: lnxcfg
+     
+     - name: Apply the RBAC config file to the cluster
+       shell: kubectl apply -f rbac-kdd.yaml
+       sudo: true
+       sudo_user: lnxcfg       
