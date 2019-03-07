@@ -52,7 +52,7 @@
        sudo_user: lnxcfg
 
      - name: Create kube directory 
-       command: mkdir -p $HOME/.kube
+       shell: mkdir -p $HOME/.kube
        sudo: true
        sudo_user: lnxcfg
 
@@ -67,12 +67,12 @@
        sudo_user: lnxcfg
        
      - name: copy admin_conf file into kube_config directory 
-       command: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
+       shell: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
        sudo: true
        sudo_user: lnxcfg
 
      - name: Change ownership of kube_config directory 
-       command: chown $(id -u):$(id -g) $HOME/.kube/config 
+       shell: chown $(id -u):$(id -g) $HOME/.kube/config 
        sudo: true
        sudo_user: lnxcfg       
        
@@ -87,6 +87,6 @@
 
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
-       command: kubectl apply -f calico.yaml
+       shell: kubectl apply -f calico.yaml
        sudo: true
        sudo_user: lnxcfg
