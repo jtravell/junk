@@ -56,10 +56,20 @@
        sudo: true
        sudo_user: lnxcfg
 
+     - name: Change ownership of /etc/kubernetes so that the next step can copy a config file from it 
+       shell: chown -R lnxcfg:lnxcfg /etc/kubernetes
+       become: yes
+       become_user: root
+
+     - name: Create the .kube/config directory
+       shell: mkdir $HOME/.kube/config
+       sudo: true
+       sudo_user: lnxcfg
+       
      - name: copy admin_conf file into kube_config directory 
        command: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
-       become: yes
-       become_user: root  
+       sudo: true
+       sudo_user: lnxcfg
 
      - name: Change ownership of kube_config directory 
        command: chown $(id -u):$(id -g) $HOME/.kube/config 
