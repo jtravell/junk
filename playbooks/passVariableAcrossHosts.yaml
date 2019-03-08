@@ -1,0 +1,15 @@
+- hosts: k8s-master
+  tasks:
+    - command: /bin/echo "this is a test"
+      register: foo
+
+- hosts: k8s-worker
+  tasks:
+    - debug: var=foo
+      when: foo is defined
+
+    - debug: var=hostvars['k8s-master']['foo']
+      when: hostvars['k8s-master']['foo'] is defined
+      
+   # The output of this playbook shows that the first task is skipped because foo is not defined by the host anotherhost. 
+   # But the second task succeeds because it's explicitly referencing localhosts's instance of the variable foo:
