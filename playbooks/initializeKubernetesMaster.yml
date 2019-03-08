@@ -9,14 +9,6 @@
 
   tasks:  
 
-#     - name: Download the RBAC config file 
-#       get_url:
-#         url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-#         dest: /home/lnxcfg/rbac-kdd.yaml
-#         mode: 0440
-#       become: yes
-#       become_user: root
-
      - name: Download the Calico config file 
        get_url:
          url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
@@ -24,11 +16,6 @@
          mode: 0440
        become: yes
        become_user: root
-  
-#     - name: Put cidr for overlay network into environment variable
-#       shell: MY_CALICO_CIDR=$( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
-#       become: yes
-#       become_user: root
 
      #Start test of new variable approach
      - name: Define cidr for calico as a variable in the task
@@ -84,8 +71,19 @@
        sudo_user: lnxcfg       
 
      # Enable bash autocompletion
-     - name: Deploy a pod network to the cluster 
-       shell: source <(kubectl completion bash)
+     # Commenting out these next two because they are causing errors related to not escaping the ( 
+     # Keeping them here commented out as a reminder to fix this later.  
+     #- name: Enable bash autocompletion 1 of 2 
+     #  shell: source <(kubectl completion bash)
+     #
+     #- name: Enable bash autocompletion 2 of 2  
+     #  shell: echo "source <(kubectl completion bash)" >>~/.bashrc
 
-     - name: Deploy a pod network to the cluster 
-       shell: echo "source <(kubectl completion bash)" >>~/.bashrc
+     
+     # Also need to add functionality to test that dns and calico pods are ready for use
+     # kubectl get pods --all-namespaces
+
+     
+##############################################################################################################################################################
+# Pass credentials into worker using this: https://stackoverflow.com/questions/33896847/how-do-i-set-register-a-variable-to-persist-between-plays-in-ansible
+##############################################################################################################################################################
