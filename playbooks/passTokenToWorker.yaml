@@ -1,5 +1,13 @@
-#On master
-- hosts: k8s-master
+---
+# Get token from master 
+# Steps ib naster 
+- name: Get token from master
+  hosts: k8s-master
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+
   tasks:
     - name: "Cluster token"
       shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
@@ -22,9 +30,15 @@
     - name:
       debug:
         msg: "[Master] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
-	
-#On Workers
-- hosts: k8s-worker
+
+# Steps in worker naster 
+- name: Give token to worker
+  hosts: k8s-worker
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+        
   tasks:
     - name:
       debug:
@@ -39,4 +53,3 @@
         kubeadm join --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }}
         --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}
         {{K8S_MASTER_NODE_IP}}:{{K8S_API_SERCURE_PORT}}
-
