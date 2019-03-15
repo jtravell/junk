@@ -1,6 +1,7 @@
 
 ---
 # Kubernetes installation steps that apply to all types of nodes.  Will be followed by specific additional steps for each type of node.  
+# Note this other example has some code to examine: https://github.com/kairen/kubeadm-ansible 
 - name: Install k8s generic all types of nodes.
   hosts: k8s-master, k8s-worker
   remote_user: lnxcfg
@@ -126,6 +127,11 @@
        shell: chown $(id -u):$(id -g) $HOME/.kube/config 
        sudo: true
        sudo_user: lnxcfg       
+
+     - name: Remove taint from master so that Calico will be able to apply coredns
+       shell: kubectl taint node $(kubectl get nodes --selector=node-role.kubernetes.io/master | awk 'FNR==2{print $1}') node-role.kubernetes.io/master:NoSchedule-
+       sudo: true
+       sudo_user: lnxcfg
        
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
@@ -133,10 +139,11 @@
        sudo: true
        sudo_user: lnxcfg       
 
-     - name: Apply the RBAC config file to the cluster
-       shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-       sudo: true
-       sudo_user: lnxcfg       
+     # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
+     #- name: Apply the RBAC config file to the cluster
+     #  shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+     #  sudo: true
+     #  sudo_user: lnxcfg       
 
      # Enable bash autocompletion
      # Commenting out these next two because they are causing errors related to not escaping the ( 
