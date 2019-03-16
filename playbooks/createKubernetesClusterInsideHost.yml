@@ -136,7 +136,7 @@
        
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
-       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
        sudo: true
        sudo_user: lnxcfg       
 
