@@ -128,10 +128,11 @@
        sudo: true
        sudo_user: lnxcfg       
 
-     - name: Remove taint from master so that Calico will be able to apply coredns
-       shell: kubectl taint node $(kubectl get nodes --selector=node-role.kubernetes.io/master | awk 'FNR==2{print $1}') node-role.kubernetes.io/master:NoSchedule-
-       sudo: true
-       sudo_user: lnxcfg
+       # The following 4 lines were a test, and caused an additional error without resolving the error that it was put in to test.  So I am commenting it out here and plan to delete it altogether later.
+       #- name: Remove taint from master so that Calico will be able to apply coredns
+       #shell: kubectl taint node $(kubectl get nodes --selector=node-role.kubernetes.io/master | awk 'FNR==2{print $1}') node-role.kubernetes.io/master:NoSchedule-
+       #sudo: true
+       #sudo_user: lnxcfg
        
      # Then deploy a pod network to the cluster 
      - name: Deploy a pod network to the cluster 
