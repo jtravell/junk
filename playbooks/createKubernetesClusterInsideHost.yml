@@ -16,8 +16,8 @@
          name: '*'
          state: latest
 
-     - name: Reboot machine
-       reboot:
+     #- name: Reboot machine
+     #  reboot:
           
      - name: Remove any previous versions of docker
        command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
@@ -79,34 +79,34 @@
   tasks:  
 
      #(COMMENTING OUT NEXT 4 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
-     #- name: Download the Calico config file 
-     #  get_url:
-     #    url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-     #    dest: /home/lnxcfg/calico.yaml
-     #    mode: 0440
-     #  become: yes
-     #  become_user: root
+     - name: Download the Calico config file 
+       get_url:
+         url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+         dest: /home/lnxcfg/calico.yaml
+         mode: 0440
+       become: yes
+       become_user: root
 
      #Start test of new variable approach (COMMENTING OUT NEXT 12 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
-     #- name: Define cidr for calico as a variable in the task
-     #  shell: echo $( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
-     #  register: with_output
-     #  become: yes
-     #  become_user: root
-     #
-     #- name: Run kubeadm init using the calico variable just created
-     #  shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr {{ item }} | tee kubeadm-init.out
-     #  with_items: 
-     #    - "{{ with_output.stdout_lines }}"
-     #  become: yes
-     #  become_user: root  
+     - name: Define cidr for calico as a variable in the task
+       shell: echo $( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
+       register: with_output
+       become: yes
+       become_user: root
+     
+     - name: Run kubeadm init using the calico variable just created
+       shell: kubeadm init --kubernetes-version 1.13.1 --pod-network-cidr {{ item }} | tee kubeadm-init.out
+       with_items: 
+         - "{{ with_output.stdout_lines }}"
+       become: yes
+       become_user: root  
      #End test of new variable approach
 
      #Start test of removing calico
-     - name: Run kubeadm init 
-       shell: kubeadm init --kubernetes-version 1.13.1 | tee kubeadm-init.out
-       become: yes
-       become_user: root       
+     #- name: Run kubeadm init 
+     #  shell: kubeadm init --kubernetes-version 1.13.1 | tee kubeadm-init.out
+     #  become: yes
+     #  become_user: root       
      #End test of removing calico
      
      #Confirm that kubeadm init has created the admin.conf file  
@@ -143,10 +143,10 @@
        #sudo_user: lnxcfg
        
      # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
-     #- name: Deploy a pod network to the cluster 
-     #  shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
-     #  sudo: true
-     #  sudo_user: lnxcfg       
+     - name: Deploy a pod network to the cluster 
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
+       sudo: true
+       sudo_user: lnxcfg       
 
      # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
      #- name: Apply the RBAC config file to the cluster
