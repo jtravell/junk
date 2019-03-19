@@ -18,21 +18,42 @@
 
      #- name: Reboot machine
      #  reboot:
-          
-     - name: Remove any previous versions of docker
-       command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+       
+     - name: remove any previous versions of docker  
+       yum:
+         name: docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+         state: absent
+    
+     #- name: Remove any previous versions of docker
+     #  command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
 
-     - name: Install package that will be needed later to disable SELinux
-       command: yum -y install libselinux-python
+     - name: install package that will be needed later to disable SELinux  
+       yum:
+         name: libselinux-python
+         state: latest
+
+     #- name: Install package that will be needed later to disable SELinux
+     #  command: yum -y install libselinux-python
        
      - name: Install docker 
        command: amazon-linux-extras install -y docker
+
+     - name: Make sure docker service is running
+       systemd:
+         state: started
+         name: docker.service
        
-     - name: Start docker
-       command: systemctl start docker.service
+     #- name: Start docker
+     #  command: systemctl start docker.service
        
-     - name: Enable docker 
-       command: systemctl enable docker.service
+     - name: enable service docker and ensure it is not masked
+       systemd:
+         name: docker.service
+         enabled: yes
+         masked: no
+
+     #- name: Enable docker 
+     #  command: systemctl enable docker.service
        
      - name: Add user to docker group
        command: usermod -a -G docker lnxcfg
@@ -59,14 +80,28 @@
        become: yes
        become_user: root
 
-     - name: Install kubelet kubeadm and kubectl
-       command: yum -y install kubelet kubeadm kubectl
+     - name: install kubelet kubeadm and kubectl   
+       yum:
+         name: kubelet kubeadm kubectl
+         state: latest
 
-     - name: Enable kubelet before kubeadm  
-       command: systemctl enable kubelet
+     #- name: Install kubelet kubeadm and kubectl
+     #  command: yum -y install kubelet kubeadm kubectl
+
+     - name: enable service kubelet and ensure it is not masked before running kubeadm after
+       systemd:
+         name: kubelet
+         enabled: yes
+         masked: no
        become: yes 
        become_method: sudo
        become_user: root
+
+     #- name: Enable kubelet before kubeadm  
+     #  command: systemctl enable kubelet
+     #  become: yes 
+     #  become_method: sudo
+     #  become_user: root
 
 # Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
 - name: Initialize Kubernetes on a Master node 
