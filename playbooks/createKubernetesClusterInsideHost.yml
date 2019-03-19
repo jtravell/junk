@@ -21,7 +21,7 @@
        
      - name: remove any previous versions of docker  
        yum:
-         name: docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
+         name: docker, docker-client, docker-client-latest, docker-common, docker-latest, docker-latest-logrotate, docker-logrotate, docker-engine
          state: absent
     
      #- name: Remove any previous versions of docker
@@ -82,7 +82,7 @@
 
      - name: install kubelet kubeadm and kubectl   
        yum:
-         name: kubelet kubeadm kubectl
+         name: kubelet, kubeadm, kubectl
          state: latest
 
      #- name: Install kubelet kubeadm and kubectl
