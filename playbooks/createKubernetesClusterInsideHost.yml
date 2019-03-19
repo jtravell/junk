@@ -103,17 +103,17 @@
      #  become_method: sudo
      #  become_user: root
 
-########  # Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
-########  - name: Initialize Kubernetes on a Master node 
-########    hosts: k8s-master
-########    remote_user: lnxcfg
-########    become: true
-########    become_method: sudo
-########    become_user: root
-########  
-########    tasks:  
-########  
-########       #(COMMENTING OUT NEXT 4 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
+# Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
+- name: Initialize Kubernetes on a Master node 
+  hosts: k8s-master
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+
+  tasks:  
+
+     #(COMMENTING OUT NEXT 4 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
 ########       - name: Download the Calico config file 
 ########         get_url:
 ########           url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
@@ -129,6 +129,12 @@
 ########         become: yes
 ########         become_user: root
 ########  
+
+     - name: Run kubeadm init using the calico variable just created
+       shell: sudo kubeadm init --kubernetes-version=1.13.1 --pod-network-cidr=192.168.0.0/16 | tee kubeadm-init.out
+       become: yes
+       become_user: root  
+
 ########       - name: Run kubeadm init using the calico variable just created
 ########         shell: kubeadm init --kubernetes-version=1.13.1 --pod-network-cidr={{ item }} | tee kubeadm-init.out
 ########         with_items: 
