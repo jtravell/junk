@@ -136,13 +136,6 @@
        become: yes
        become_user: root  
      #End test of new variable approach
-
-     #Start test of removing calico
-     #- name: Run kubeadm init 
-     #  shell: kubeadm init --kubernetes-version 1.13.1 | tee kubeadm-init.out
-     #  become: yes
-     #  become_user: root       
-     #End test of removing calico
      
      #Confirm that kubeadm init has created the admin.conf file  
      - name: Wait until the file /etc/kubernetes/admin.conf is present before continuing
@@ -177,17 +170,17 @@
        #sudo: true
        #sudo_user: lnxcfg
        
+     # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
+     - name: Apply the RBAC config file to the cluster
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml | tee kubeadm-rbac.out
+       sudo: true
+       sudo_user: lnxcfg       
+
      # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
      - name: Deploy a pod network to the cluster 
        shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
        sudo: true
        sudo_user: lnxcfg       
-
-     # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
-     #- name: Apply the RBAC config file to the cluster
-     #  shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-     #  sudo: true
-     #  sudo_user: lnxcfg       
 
      # Enable bash autocompletion
      # Commenting out these next two because they are causing errors related to not escaping the ( 
