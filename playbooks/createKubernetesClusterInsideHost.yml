@@ -103,180 +103,180 @@
      #  become_method: sudo
      #  become_user: root
 
-# Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
-- name: Initialize Kubernetes on a Master node 
-  hosts: k8s-master
-  remote_user: lnxcfg
-  become: true
-  become_method: sudo
-  become_user: root
-
-  tasks:  
-
-     #(COMMENTING OUT NEXT 4 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
-     - name: Download the Calico config file 
-       get_url:
-         url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-         dest: /home/lnxcfg/calico.yaml
-         mode: 0440
-       become: yes
-       become_user: root
-
-     #Start test of new variable approach (COMMENTING OUT NEXT 12 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
-     - name: Define cidr for calico as a variable in the task
-       shell: echo $( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
-       register: with_output
-       become: yes
-       become_user: root
-     
-     - name: Run kubeadm init using the calico variable just created
-       shell: kubeadm init --kubernetes-version=1.13.1 --pod-network-cidr={{ item }} | tee kubeadm-init.out
-       with_items: 
-         - "{{ with_output.stdout_lines }}"
-       become: yes
-       become_user: root  
-     #End test of new variable approach
-     
-     #Confirm that kubeadm init has created the admin.conf file  
-     - name: Wait until the file /etc/kubernetes/admin.conf is present before continuing
-       wait_for:
-         path: /etc/kubernetes/admin.conf
-       sudo: true
-       sudo_user: lnxcfg
-
-     - name: Create kube directory 
-       shell: mkdir -p $HOME/.kube
-       sudo: true
-       sudo_user: lnxcfg
-
-     - name: Change ownership of /etc/kubernetes so that the next step can copy a config file from it 
-       shell: chown -R lnxcfg:lnxcfg /etc/kubernetes
-       become: yes
-       become_user: root
-       
-     - name: copy admin_conf file into kube_config directory 
-       shell: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
-       sudo: true
-       sudo_user: lnxcfg
-
-     - name: Change ownership of kube_config file 
-       shell: chown $(id -u):$(id -g) $HOME/.kube/config 
-       sudo: true
-       sudo_user: lnxcfg       
-
-       # The following 4 lines were a test, and caused an additional error without resolving the error that it was put in to test.  So I am commenting it out here and plan to delete it altogether later.
-       #- name: Remove taint from master so that Calico will be able to apply coredns
-       #shell: kubectl taint node $(kubectl get nodes --selector=node-role.kubernetes.io/master | awk 'FNR==2{print $1}') node-role.kubernetes.io/master:NoSchedule-
-       #sudo: true
-       #sudo_user: lnxcfg
-       
-     # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
-     - name: Apply the RBAC config file to the cluster
-       shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml | tee kubeadm-rbac.out
-       sudo: true
-       sudo_user: lnxcfg       
-
-     # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
-     - name: Deploy a pod network to the cluster 
-       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
-       sudo: true
-       sudo_user: lnxcfg       
-
-     # Enable bash autocompletion
-     # Commenting out these next two because they are causing errors related to not escaping the ( 
-     # Keeping them here commented out as a reminder to fix this later.  
-     #- name: Enable bash autocompletion 1 of 2 
-     #  shell: source <(kubectl completion bash)
-     #
-     #- name: Enable bash autocompletion 2 of 2  
-     #  shell: echo "source <(kubectl completion bash)" >>~/.bashrc
-
-     
-     # Also need to add functionality to test that dns and calico pods are ready for use
-     # kubectl get pods --all-namespaces
-
-     
-##############################################################################################################################################################
-# Pass credentials into worker using this: https://stackoverflow.com/questions/33896847/how-do-i-set-register-a-variable-to-persist-between-plays-in-ansible
-##############################################################################################################################################################
-
-# Get token from master 
-# Steps ib naster 
-- name: Get token from master
-  hosts: k8s-master
-  remote_user: lnxcfg
-  become: true
-  become_method: sudo
-  become_user: root
-
-  tasks:
-    - name: "Cluster token"
-      shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
-      register: K8S_TOKEN
-
-    - name: "CA Hash"
-      shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
-      register: K8S_MASTER_CA_HASH
-      
-    - name: "Local IP"
-      shell: ec2-metadata --local-ipv4 | awk '{print $2;}'
-      register: K8S_MASTER_LOCAL_IPV4
-
-    - name: "Secure Port"
-      shell: echo 6443
-      register: K8S_MASTER_API_SECURE_PORT
-
-    - name: "Add K8S Token and Hash to dummy host"
-      add_host:
-        name:   "K8S_TOKEN_HOLDER"
-        token:  "{{ K8S_TOKEN.stdout }}"
-        hash:   "{{ K8S_MASTER_CA_HASH.stdout }}"
-        locip:  "{{ K8S_MASTER_LOCAL_IPV4.stdout }}"
-        sport:  "{{ K8S_MASTER_API_SECURE_PORT.stdout }}"
-
-    - name:
-      debug:
-        msg: "[Master] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
-
-    - name:
-      debug:
-        msg: "[Master] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
-
-    - name:
-      debug:
-        msg: "[Master] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
-
-    - name:
-      debug:
-        msg: "[Master] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"  
-  
-# Steps in worker naster 
-- name: Give token to worker
-  hosts: k8s-worker
-  remote_user: lnxcfg
-  become: true
-  become_method: sudo
-  become_user: root
-        
-  tasks:
-    - name:
-      debug:
-        msg: "[Worker] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
-
-    - name:
-      debug:
-        msg: "[Worker] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
-
-    - name:
-      debug:
-        msg: "[Worker] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
-
-    - name:
-      debug:
-        msg: "[Worker] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"
-
-    - name: "Kubeadmn join"
-      shell: >
-        kubeadm join --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }}
-        --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}
-        {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}:{{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}
+########  # Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
+########  - name: Initialize Kubernetes on a Master node 
+########    hosts: k8s-master
+########    remote_user: lnxcfg
+########    become: true
+########    become_method: sudo
+########    become_user: root
+########  
+########    tasks:  
+########  
+########       #(COMMENTING OUT NEXT 4 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
+########       - name: Download the Calico config file 
+########         get_url:
+########           url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+########           dest: /home/lnxcfg/calico.yaml
+########           mode: 0440
+########         become: yes
+########         become_user: root
+########  
+########       #Start test of new variable approach (COMMENTING OUT NEXT 12 LINES AS A TEST TO DEPLOY WITHOUT CALICO JUST TO GET THINGS WORKING.)
+########       - name: Define cidr for calico as a variable in the task
+########         shell: echo $( cat /home/lnxcfg/calico.yaml | grep -A 1 CALICO_IPV4POOL_CIDR | grep value | cut -d ':' -f2 | tr -d ' "')
+########         register: with_output
+########         become: yes
+########         become_user: root
+########  
+########       - name: Run kubeadm init using the calico variable just created
+########         shell: kubeadm init --kubernetes-version=1.13.1 --pod-network-cidr={{ item }} | tee kubeadm-init.out
+########         with_items: 
+########           - "{{ with_output.stdout_lines }}"
+########         become: yes
+########         become_user: root  
+########       #End test of new variable approach
+########  
+########       #Confirm that kubeadm init has created the admin.conf file  
+########       - name: Wait until the file /etc/kubernetes/admin.conf is present before continuing
+########         wait_for:
+########           path: /etc/kubernetes/admin.conf
+########         sudo: true
+########         sudo_user: lnxcfg
+########  
+########       - name: Create kube directory 
+########         shell: mkdir -p $HOME/.kube
+########         sudo: true
+########         sudo_user: lnxcfg
+########  
+########       - name: Change ownership of /etc/kubernetes so that the next step can copy a config file from it 
+########         shell: chown -R lnxcfg:lnxcfg /etc/kubernetes
+########         become: yes
+########         become_user: root
+########  
+########       - name: copy admin_conf file into kube_config directory 
+########         shell: cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
+########         sudo: true
+########         sudo_user: lnxcfg
+########  
+########       - name: Change ownership of kube_config file 
+########         shell: chown $(id -u):$(id -g) $HOME/.kube/config 
+########         sudo: true
+########         sudo_user: lnxcfg       
+########  
+########         # The following 4 lines were a test, and caused an additional error without resolving the error that it was put in to test.  So I am commenting it out here and plan to delete it altogether later.
+########         #- name: Remove taint from master so that Calico will be able to apply coredns
+########         #shell: kubectl taint node $(kubectl get nodes --selector=node-role.kubernetes.io/master | awk 'FNR==2{print $1}') node-role.kubernetes.io/master:NoSchedule-
+########         #sudo: true
+########         #sudo_user: lnxcfg
+########  
+########       # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
+########       - name: Apply the RBAC config file to the cluster
+########         shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml | tee kubeadm-rbac.out
+########         sudo: true
+########         sudo_user: lnxcfg       
+########  
+########       # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
+########       - name: Deploy a pod network to the cluster 
+########         shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
+########         sudo: true
+########         sudo_user: lnxcfg       
+########  
+########       # Enable bash autocompletion
+########       # Commenting out these next two because they are causing errors related to not escaping the ( 
+########       # Keeping them here commented out as a reminder to fix this later.  
+########       #- name: Enable bash autocompletion 1 of 2 
+########       #  shell: source <(kubectl completion bash)
+########       #
+########       #- name: Enable bash autocompletion 2 of 2  
+########       #  shell: echo "source <(kubectl completion bash)" >>~/.bashrc
+########  
+########  
+########       # Also need to add functionality to test that dns and calico pods are ready for use
+########       # kubectl get pods --all-namespaces
+########  
+########  
+########  ##############################################################################################################################################################
+########  # Pass credentials into worker using this: https://stackoverflow.com/questions/33896847/how-do-i-set-register-a-variable-to-persist-between-plays-in-ansible
+########  ##############################################################################################################################################################
+########  
+########  # Get token from master 
+########  # Steps ib naster 
+########  - name: Get token from master
+########    hosts: k8s-master
+########    remote_user: lnxcfg
+########    become: true
+########    become_method: sudo
+########    become_user: root
+########  
+########    tasks:
+########      - name: "Cluster token"
+########        shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
+########        register: K8S_TOKEN
+########  
+########      - name: "CA Hash"
+########        shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+########        register: K8S_MASTER_CA_HASH
+########  
+########      - name: "Local IP"
+########        shell: ec2-metadata --local-ipv4 | awk '{print $2;}'
+########        register: K8S_MASTER_LOCAL_IPV4
+########  
+########      - name: "Secure Port"
+########        shell: echo 6443
+########        register: K8S_MASTER_API_SECURE_PORT
+########  
+########      - name: "Add K8S Token and Hash to dummy host"
+########        add_host:
+########          name:   "K8S_TOKEN_HOLDER"
+########          token:  "{{ K8S_TOKEN.stdout }}"
+########          hash:   "{{ K8S_MASTER_CA_HASH.stdout }}"
+########          locip:  "{{ K8S_MASTER_LOCAL_IPV4.stdout }}"
+########          sport:  "{{ K8S_MASTER_API_SECURE_PORT.stdout }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Master] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Master] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Master] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Master] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"  
+########  
+########  # Steps in worker naster 
+########  - name: Give token to worker
+########    hosts: k8s-worker
+########    remote_user: lnxcfg
+########    become: true
+########    become_method: sudo
+########    become_user: root
+########  
+########    tasks:
+########      - name:
+########        debug:
+########          msg: "[Worker] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Worker] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Worker] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
+########  
+########      - name:
+########        debug:
+########          msg: "[Worker] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"
+########  
+########      - name: "Kubeadmn join"
+########        shell: >
+########          kubeadm join --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }}
+########          --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}
+########          {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}:{{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}
