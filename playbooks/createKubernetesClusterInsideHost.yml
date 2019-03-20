@@ -202,87 +202,87 @@
 ########       # kubectl get pods --all-namespaces
 ########  
 ########  
-########  ##############################################################################################################################################################
-########  # Pass credentials into worker using this: https://stackoverflow.com/questions/33896847/how-do-i-set-register-a-variable-to-persist-between-plays-in-ansible
-########  ##############################################################################################################################################################
-########  
-########  # Get token from master 
-########  # Steps ib naster 
-########  - name: Get token from master
-########    hosts: k8s-master
-########    remote_user: lnxcfg
-########    become: true
-########    become_method: sudo
-########    become_user: root
-########  
-########    tasks:
-########      - name: "Cluster token"
-########        shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
-########        register: K8S_TOKEN
-########  
-########      - name: "CA Hash"
-########        shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
-########        register: K8S_MASTER_CA_HASH
-########  
-########      - name: "Local IP"
-########        shell: ec2-metadata --local-ipv4 | awk '{print $2;}'
-########        register: K8S_MASTER_LOCAL_IPV4
-########  
-########      - name: "Secure Port"
-########        shell: echo 6443
-########        register: K8S_MASTER_API_SECURE_PORT
-########  
-########      - name: "Add K8S Token and Hash to dummy host"
-########        add_host:
-########          name:   "K8S_TOKEN_HOLDER"
-########          token:  "{{ K8S_TOKEN.stdout }}"
-########          hash:   "{{ K8S_MASTER_CA_HASH.stdout }}"
-########          locip:  "{{ K8S_MASTER_LOCAL_IPV4.stdout }}"
-########          sport:  "{{ K8S_MASTER_API_SECURE_PORT.stdout }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Master] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Master] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Master] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Master] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"  
-########  
-########  # Steps in worker naster 
-########  - name: Give token to worker
-########    hosts: k8s-worker
-########    remote_user: lnxcfg
-########    become: true
-########    become_method: sudo
-########    become_user: root
-########  
-########    tasks:
-########      - name:
-########        debug:
-########          msg: "[Worker] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Worker] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Worker] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
-########  
-########      - name:
-########        debug:
-########          msg: "[Worker] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"
-########  
-########      - name: "Kubeadmn join"
-########        shell: >
-########          kubeadm join --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }}
-########          --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}
-########          {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}:{{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}
+##############################################################################################################################################################
+# Pass credentials into worker using this: https://stackoverflow.com/questions/33896847/how-do-i-set-register-a-variable-to-persist-between-plays-in-ansible
+##############################################################################################################################################################
+
+# Get token from master 
+# Steps ib naster 
+- name: Get token from master
+  hosts: k8s-master
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+
+  tasks:
+    - name: "Cluster token"
+      shell: kubeadm token list | cut -d ' ' -f1 | sed -n '2p'
+      register: K8S_TOKEN
+
+    - name: "CA Hash"
+      shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+      register: K8S_MASTER_CA_HASH
+
+    - name: "Local IP"
+      shell: ec2-metadata --local-ipv4 | awk '{print $2;}'
+      register: K8S_MASTER_LOCAL_IPV4
+
+    - name: "Secure Port"
+      shell: echo 6443
+      register: K8S_MASTER_API_SECURE_PORT
+
+    - name: "Add K8S Token and Hash to dummy host"
+      add_host:
+        name:   "K8S_TOKEN_HOLDER"
+        token:  "{{ K8S_TOKEN.stdout }}"
+        hash:   "{{ K8S_MASTER_CA_HASH.stdout }}"
+        locip:  "{{ K8S_MASTER_LOCAL_IPV4.stdout }}"
+        sport:  "{{ K8S_MASTER_API_SECURE_PORT.stdout }}"
+
+    - name:
+      debug:
+        msg: "[Master] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
+
+    - name:
+      debug:
+        msg: "[Master] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
+
+    - name:
+      debug:
+        msg: "[Master] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
+
+    - name:
+      debug:
+        msg: "[Master] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"  
+
+# Steps in worker naster 
+- name: Give token to worker
+  hosts: k8s-worker
+  remote_user: lnxcfg
+  become: true
+  become_method: sudo
+  become_user: root
+
+  tasks:
+    - name:
+      debug:
+        msg: "[Worker] K8S_TOKEN_HOLDER K8S token is {{ hostvars['K8S_TOKEN_HOLDER']['token'] }}"
+
+    - name:
+      debug:
+        msg: "[Worker] K8S_TOKEN_HOLDER K8S Hash is  {{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}"
+
+    - name:
+      debug:
+        msg: "[Worker] K8S_TOKEN_HOLDER K8S IP is  {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}"
+
+    - name:
+      debug:
+        msg: "[Worker] K8S_TOKEN_HOLDER K8S Secure Port is  {{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}"
+
+    - name: "Kubeadmn join"
+      shell: >
+        kubeadm join --token={{ hostvars['K8S_TOKEN_HOLDER']['token'] }}
+        --discovery-token-ca-cert-hash sha256:{{ hostvars['K8S_TOKEN_HOLDER']['hash'] }}
+        {{ hostvars['K8S_TOKEN_HOLDER']['locip'] }}:{{ hostvars['K8S_TOKEN_HOLDER']['sport'] }}
