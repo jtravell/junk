@@ -176,11 +176,12 @@
 ########         #sudo: true
 ########         #sudo_user: lnxcfg
 ########  
-########       # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
-########       - name: Apply the RBAC config file to the cluster
-########         shell: kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml | tee kubeadm-rbac.out
-########         sudo: true
-########         sudo_user: lnxcfg       
+     # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
+     - name: Apply the RBAC config file to the cluster
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml | tee kubeadm-rbac-kdd.out
+       sudo: true
+       sudo_user: lnxcfg
+
 ########  
 ########       # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
 ########       - name: Deploy a pod network to the cluster 
