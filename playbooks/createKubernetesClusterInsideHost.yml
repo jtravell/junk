@@ -182,12 +182,11 @@
        sudo: true
        sudo_user: lnxcfg
 
-########  
-########       # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
-########       - name: Deploy a pod network to the cluster 
-########         shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
-########         sudo: true
-########         sudo_user: lnxcfg       
+     # Then deploy a pod network to the cluster (REMOVING NEXT 4 LINES WHEN WE COMMENT OUT THE --pod-network-cidr ABOVE.  PUT THIS BACK IN LATER)
+     - name: Deploy a pod network to the cluster 
+       shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml | tee kubeadm-calico.out
+       sudo: true
+       sudo_user: lnxcfg       
 ########  
 ########       # Enable bash autocompletion
 ########       # Commenting out these next two because they are causing errors related to not escaping the ( 
