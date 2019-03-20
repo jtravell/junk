@@ -15,26 +15,17 @@
        yum:
          name: '*'
          state: latest
-
-     #- name: Reboot machine
-     #  reboot:
        
      - name: remove any previous versions of docker  
        yum:
          name: docker, docker-client, docker-client-latest, docker-common, docker-latest, docker-latest-logrotate, docker-logrotate, docker-engine
          state: absent
-    
-     #- name: Remove any previous versions of docker
-     #  command: yum -y remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine
 
      - name: install package that will be needed later to disable SELinux  
        yum:
          name: libselinux-python
          state: latest
 
-     #- name: Install package that will be needed later to disable SELinux
-     #  command: yum -y install libselinux-python
-       
      - name: Install docker 
        command: amazon-linux-extras install -y docker
 
@@ -43,17 +34,11 @@
          state: started
          name: docker.service
        
-     #- name: Start docker
-     #  command: systemctl start docker.service
-       
      - name: enable service docker and ensure it is not masked
        systemd:
          name: docker.service
          enabled: yes
          masked: no
-
-     #- name: Enable docker 
-     #  command: systemctl enable docker.service
        
      - name: Add user to docker group
        command: usermod -a -G docker lnxcfg
@@ -85,9 +70,6 @@
          name: kubelet, kubeadm, kubectl
          state: latest
 
-     #- name: Install kubelet kubeadm and kubectl
-     #  command: yum -y install kubelet kubeadm kubectl
-
      - name: enable service kubelet and ensure it is not masked before running kubeadm after
        systemd:
          name: kubelet
@@ -96,12 +78,6 @@
        become: yes 
        become_method: sudo
        become_user: root
-
-     #- name: Enable kubelet before kubeadm  
-     #  command: systemctl enable kubelet
-     #  become: yes 
-     #  become_method: sudo
-     #  become_user: root
 
 # Kubernetes initialization steps for Master.  Assumes that the generic installation has already been completed.    
 - name: Initialize Kubernetes on a Master node 
@@ -170,12 +146,6 @@
        sudo: true
        sudo_user: lnxcfg       
 
-########         # The following 4 lines were a test, and caused an additional error without resolving the error that it was put in to test.  So I am commenting it out here and plan to delete it altogether later.
-########         #- name: Remove taint from master so that Calico will be able to apply coredns
-########         #shell: kubectl taint node $(kubectl get nodes --selector=node-role.kubernetes.io/master | awk 'FNR==2{print $1}') node-role.kubernetes.io/master:NoSchedule-
-########         #sudo: true
-########         #sudo_user: lnxcfg
-########  
      # Uncomment this after the preceding line is able to result in a successfully deployed pod network 
      - name: Apply the RBAC config file to the cluster
        shell: kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml | tee kubeadm-rbac-kdd.out
@@ -196,11 +166,6 @@
 ########       #
 ########       #- name: Enable bash autocompletion 2 of 2  
 ########       #  shell: echo "source <(kubectl completion bash)" >>~/.bashrc
-########  
-########  
-########       # Also need to add functionality to test that dns and calico pods are ready for use
-########       # kubectl get pods --all-namespaces
-########  
 ########  
 ##############################################################################################################################################################
 # Pass credentials into worker using this: https://stackoverflow.com/questions/33896847/how-do-i-set-register-a-variable-to-persist-between-plays-in-ansible
